@@ -6,51 +6,72 @@ keypress(process.stdin);
 import Map from "./Map";
 import Position, { Direction } from "./Position";
 import Seed from "./Seed";
-import Character from "./Character";
+import store, { PlayerState, getVisitedRooms, movePlayer, undo } from "./Store";
 
 export default class Plot {
   seed = Seed.getInstance();
   map = new Map();
-  position = new Position();
-  movements = [] as string[];
 
-  character: Character = {
-    health: 100,
-    swordLevel: 0,
-  };
+  get player(): PlayerState {
+    return store.getState().game.player.present;
+  }
 
   constructor() {
     this.loop();
   }
 
   async loop() {
+    let undone = false;
     while (true) {
+      console.clear();
+
       this.drawPlayerInfos();
 
-      const room = this.map.getRoom(this.position);
+      let pos = Object.assign(new Position(), this.currentPlayerPosition);
+      const room = this.map.getRoom(pos);
 
-      room.enter(this.character);
-      room.visited = true;
+      const visitedRooms = getVisitedRooms();
 
-      if (this.character.health <= 0) {
+      const roomAlreadyVisited = undone || visitedRooms.some(
+        (p) => p.x === pos.x && p.y === pos.y
+      );
+
+      if(roomAlreadyVisited) room.reEnter(this.player);
+      else room.enter(this.player);
+
+      this.drawPlayerInfos();
+
+      if (this.player.health <= 0) {
         console.log("💀 You died 💀");
         break;
       }
 
-      await this.promptDirection();
+      const direction = await this.promptDirection();
+
+      if(direction === -1) {
+        store.dispatch(movePlayer(direction));
+        undone = true;
+      } else {
+        store.dispatch(movePlayer(direction));
+        undone = false;
+      }
     }
+  }
+
+  get currentPlayerPosition() {
+    return store.getState().game.player.present.position;
   }
 
   drawPlayerInfos() {
     console.clear();
-    console.log(`🧭 ${this.movements.join(" ")}`);
-    console.log(`📍 X: ${this.position.x} Y: ${this.position.y}`);
-    console.log(`❤️  ${this.character.health}/100`);
-    console.log(`🔪 Lv. ${this.character.swordLevel}`);
+    console.log(`🧭 ${this.player.movements.join(" ")}`);
+    console.log(`📍 X: ${this.currentPlayerPosition.x} Y: ${this.currentPlayerPosition.y}`);
+    console.log(`❤️  ${this.player.health}/100`);
+    console.log(`🔪 Lv. ${this.player.swordLevel}`);
     console.log();
   }
 
-  async promptDirection(): Promise<void> {
+  async promptDirection(): Promise<Direction> {
     // listen for the "keypress" event
     return new Promise((resolve) => {
       console.log(
@@ -75,22 +96,9 @@ export default class Plot {
           console.log("No direction provided, exiting...\n");
           process.exit(1);
         }
-
-        if (direction === -1) {
-          console.log("Time travel is not implemented yet...\n");
-          setTimeout(() => {
-            // Adding a timeout to leavt the time for stdin to pause
-            resolve(this.promptDirection());
-          });
-          return;
-        }
-
-        this.movements.push(Direction[direction].charAt(0));
-
-        this.position.move(direction);
-        console.log(`You move ${Direction[direction]}\n`);
-        resolve();
+        resolve(direction);
       });
     });
   }
 }
+//stdin = keyboard

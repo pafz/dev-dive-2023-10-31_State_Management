@@ -1,6 +1,7 @@
 import Character from "./Character";
 import Position from "./Position";
 import Seed from "./Seed";
+import store, { damagePlayer, levelUp, restoreHealth } from "./Store";
 
 export enum RoomType {
   Init,
@@ -25,112 +26,87 @@ export function getRoomType(room: Room): RoomType {
 
 export default interface Room {
   position: Position;
-  visited: boolean;
-  enterMessage: string;
 
+  reEnter(player: Character): void;
   enter(player: Character): void;
 }
 
 export class InitRoom implements Room {
   position: Position;
-  visited = false;
-
-  get enterMessage() {
-    if (this.visited) {
-      return `✨ You are back where you started.`;
-    }
-    return `✨ You wake up in a dark dungeon. You have no idea where you are, but you have a feeling that you are not alone.`;
-  }
 
   constructor(position: Position) {
     this.position = position.clone();
   }
 
+  reEnter() {
+    console.log(`✨ You are back where you started.`);
+  }
+
   enter() {
-    console.log(this.enterMessage);
+    console.log( "✨ You wake up in a dark dungeon. You have no idea where you are, but you have a feeling that you are not alone.");
   }
 }
 
 export class EmptyRoom implements Room {
   position: Position;
-  visited = false;
-
-  get enterMessage() {
-    if (this.visited) {
-      return "🍃 You enter in an empty room. It feels like you have been here before.";
-    }
-    return "🍃 You enter in an empty room. It's empty.";
-  }
 
   constructor(position: Position) {
     this.position = position.clone();
   }
+  reEnter(): void {
+    console.log(
+      "🍃 You enter in an empty room. It feels like you have been here before."
+    );
+  }
 
   enter() {
-    console.log(this.enterMessage);
+    console.log("🍃 You enter in an empty room. It's empty.");
   }
 }
 
 export class FoodRoom implements Room {
   position: Position;
-  visited = false;
-
-  get enterMessage() {
-    if (this.visited) {
-      return "🍖 There is an empty plate on the floor.";
-    }
-    return "🍖 You enter in a room where you find a plate with food on it. You eat it. You feel better.";
-  }
 
   constructor(position: Position) {
     this.position = position.clone();
   }
 
+  reEnter(): void {
+    console.log("🍖 There is an empty plate on the floor.");
+  }
+
   enter(player: Character) {
-    console.log(this.enterMessage);
-
-    if (this.visited) return;
-
-    player.health += 30;
-    if (player.health > 100) player.health = 100;
+    console.log(
+      "🍖 You enter in a room where you find a plate with food on it. You eat it. You feel better."
+    );
+    store.dispatch(restoreHealth(30));
   }
 }
 
 export class SwordRoom implements Room {
   position: Position;
-  visited = false;
-
-  get enterMessage() {
-    if (this.visited) {
-      return "🔪 This is where you found your sword!";
-    }
-    return "🔪 You enter in a room with a sword on the floor. You pick it up.";
-  }
 
   constructor(position: Position) {
     this.position = position.clone();
   }
 
-  enter(player: Character) {
-    console.log(this.enterMessage);
-    if (this.visited) return;
+  reEnter(): void {
+    console.log("🔪 This is where you found your sword!");
+  }
 
-    player.swordLevel += 1;
+  enter() {
+    console.log(
+      "🔪 You enter in a room with a sword on the floor. You pick it up."
+    );
+
+    store.dispatch(levelUp());
     console.log("Your sword leveled up!");
   }
 }
 
 export class MonsterRoom implements Room {
   position: Position;
-  visited = false;
   monsterPower = 1;
-
-  get enterMessage(): string {
-    if (this.visited) {
-      return "👿 You see the corpse of the monster you killed on the floor. You feel a bit sad.";
-    }
-    return "👿 A monster jumps from the shadows!";
-  }
 
   constructor(position: Position) {
     this.position = position.clone();
@@ -151,11 +127,18 @@ export class MonsterRoom implements Room {
     );
 
     return damage;
+
+    
   }
 
+  reEnter(player: Character): void {
+    console.log(
+      "👿 You see the corpse of the monster you killed on the floor. You feel a bit sad."
+    );
+    }
+
   enter(player: Character) {
-    console.log(this.enterMessage);
-    if (this.visited) return;
+    console.log("👿 A monster jumps from the shadows!");
 
     this.fightMonster(player);
   }
@@ -168,7 +151,7 @@ export class MonsterRoom implements Room {
       return;
     }
 
-    player.health -= damage;
+    store.dispatch(damagePlayer(damage));
     console.log(`The monster inflicts you ${damage} damage points\n`);
   }
 }
@@ -176,26 +159,30 @@ export class MonsterRoom implements Room {
 export class BossRoom extends MonsterRoom {
   monsterPower = 2;
 
-  get enterMessage(): string {
-    if (this.visited) {
-      return "🐲 You see the corpse of the monster you killed on the floor. You feel a bit sad.";
-    }
-    return "🐲 A giant monster jumps from the shadows!";
+  reEnter(): void {
+    console.log(
+      "🐲 You see the corpse of the monster you killed on the floor. You feel a bit sad."
+    );
+  }
+
+  enter(player: Character) {
+    console.log("🐲 A giant monster jumps from the shadows!");
+
+    this.fightMonster(player);
   }
 }
 
 export class FinalBossRoom extends MonsterRoom {
   monsterPower = 4;
 
-  get enterMessage(): string {
-    if (this.visited) {
-      return "🧌 How did you come back here? The game is over!";
-    }
-    return "🧌 You feel the earth shaking. A giant monster appears in front of you!";
+  reEnter(): void {
+    console.log("🧌 How did you come back here? The game is over!");
   }
 
   enter(player: Character) {
-    console.log(this.enterMessage);
+    console.log(
+      "🧌 You feel the earth shaking. A giant monster appears in front of you!"
+    );
 
     this.fightMonster(player);
 

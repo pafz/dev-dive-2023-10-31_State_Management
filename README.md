@@ -76,7 +76,12 @@ Use Redux to manage the state of the various elements of the game.
 An article about how to implement an undo history with Redux:
 https://redux.js.org/usage/implementing-undo-history
 
-
 ### Extra task
 
 If you still have time, add a possibility to save a game as a file, and to load it later. (Without re-playing the movements on load)
+
+## Contact
+
+<a href="https://www.linkedin.com/in/patricia-fernandez-zamanillo/" target="_blank"><img src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a> Patricia Fernández
+
+<p>Kata created by <a href="https://github.com/z0rzi">Baptiste Zorzi</a></p>

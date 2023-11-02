@@ -1,8 +1,17 @@
 export enum Direction {
+    Back = -1,
     North = 0,
     East = 1,
     South = 2,
     West = 3,
+}
+
+export const DirectionDelta = {
+    [Direction.Back] : { x: 0, y: 0},
+    [Direction.North] : { x: 0, y: -1},
+    [Direction.East] : { x: 1, y: 0},
+    [Direction.South] : { x: 0, y: 1},
+    [Direction.West] : {x: -1, y: 0},
 }
 
 export default class Position {
@@ -14,21 +23,10 @@ export default class Position {
     }
 
     move(direction: Direction) {
-        switch (direction) {
-            case Direction.North:
-                this.y++;
-                break;
-            case Direction.East:
-                this.x++;
-                break;
-            case Direction.South:
-                this.y--;
-                break;
-            case Direction.West:
-                this.x--;
-                break;
-        }
-    }
+        const delta = DirectionDelta[direction];
+        this.x += delta.x;
+        this.y += delta.y;
+      }
 
     sameAs(pos: Position) {
         return this.x === pos.x && this.y === pos.y;
